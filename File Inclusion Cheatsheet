@@ -6,6 +6,15 @@ Local file inclusion (also known as LFI) is the process of including files that 
 
 Remote File Inclusion (also known as RFI) is the process of including remote files through the exploitation of vulnerable inclusion procedures implemented in the application. This vulnerability occurs, for example, when a page receives, as input, the path to the file that has to be included, and this input is not properly sanitized, allowing external URL to be injected.
 
+What’s the Impact of File Inclusion
+
+This can lead to something as outputting the contents of the file, but depending on the severity, it can also lead to:
+
+Code execution on the web server
+Code execution on the client-side (such as JavaScript which can lead to other attacks, such as Cross-Site Scripting (XSS)
+Denial of Service (DoS)
+Sensitive Information Disclosure
+
 File Inclusion Cheatsheet
 
 Basics:
